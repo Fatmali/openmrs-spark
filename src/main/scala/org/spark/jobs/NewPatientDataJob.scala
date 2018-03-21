@@ -2,7 +2,7 @@
 
 package org.spark.jobs
 
-import org.apache.spark.storage.StorageLevel
+//
 import org.apache.spark.streaming.dstream.DStream
 import org.spark.stream._
 
@@ -47,19 +47,22 @@ class NewPatientDataJob(config: JobConfig, source: KafkaDStreamSource) extends S
 
   }
 
-  case class JobConfig(
-                        inputTopic: String,
-                        outputTopic: String,
-                        windowDuration: FiniteDuration,
-                        slideDuration: FiniteDuration,
-                        spark: Map[String, String],
-                        streamingBatchDuration: FiniteDuration,
-                        streamingCheckpointDir: String,
-                        sourceKafka: Map[String, String],
-                        sinkKafka: Map[String, String]
-                      ) extends Serializable
+case class JobConfig(
+                      inputTopic: String,
+                      outputTopic: String,
+                      windowDuration: FiniteDuration,
+                      slideDuration: FiniteDuration,
+                      spark: Map[String, String],
+                      streamingBatchDuration: FiniteDuration,
+                      streamingCheckpointDir: String,
+                      sourceKafka: Map[String, String],
+                      sinkKafka: Map[String, String]
+                    ) extends Serializable
 
-  object JobConfig {
+
+
+
+object JobConfig {
 
     import com.typesafe.config.{Config, ConfigFactory}
     import net.ceedubs.ficus.Ficus._

@@ -18,9 +18,7 @@ trait SparkStreamingApplication extends SparkApplication {
     withSparkContext { sc =>
       val ssc = new StreamingContext(sc, Seconds(streamingBatchDuration.toSeconds))
       ssc.checkpoint(streamingCheckpointDir)
-
       f(sc, ssc)
-
       ssc.start()
       ssc.awaitTermination()
     }

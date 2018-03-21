@@ -1,12 +1,11 @@
-
 lazy val kafkaVersion = "0.8.2.1"
-lazy val sparkVersion = "1.6.0"
+lazy val sparkVersion = "2.0.0"
 
 lazy val commonSettings = Seq(
   name := "openmrs-data-stream",
   version := "1.0",
   organization := "http://org.github.io/",
-  scalaVersion := "2.11.7"
+  scalaVersion := "2.11.8"
 )
 
 lazy val customScalacOptions = Seq(
@@ -29,8 +28,8 @@ lazy val customLibraryDependencies = Seq(
 
   "org.apache.spark" %% "spark-core" % sparkVersion,
   "org.apache.spark" %% "spark-streaming" % sparkVersion,
-  "org.apache.spark" %% "spark-streaming-kafka" % sparkVersion,
-
+  "org.apache.spark" %% "spark-streaming-kafka-0-8" % sparkVersion,
+  "org.apache.spark" %% "spark-sql" % sparkVersion,
   "com.twitter" %% "bijection-avro" % "0.8.1",
   "com.twitter" %% "chill-avro" % "0.7.2",
 
