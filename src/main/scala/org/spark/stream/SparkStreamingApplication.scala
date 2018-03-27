@@ -3,8 +3,7 @@
 package org.spark.stream
 
 import scala.concurrent.duration.FiniteDuration
-
-import org.apache.spark.SparkContext
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.streaming.Seconds
 import org.apache.spark.streaming.StreamingContext
 
@@ -14,11 +13,11 @@ trait SparkStreamingApplication extends SparkApplication {
 
   def streamingCheckpointDir: String
 
-  def withSparkStreamingContext(f: (SparkContext, StreamingContext) => Unit): Unit = {
-    withSparkContext { sc =>
-      val ssc = new StreamingContext(sc, Seconds(streamingBatchDuration.toSeconds))
+  def withSparkStreamingContext(f: (SparkSession, StreamingContext) => Unit): Unit = {
+    withSparkContext { spark =>
+      val ssc = new StreamingContext(spark.sparkContext, Seconds(streamingBatchDuration.toSeconds))
       ssc.checkpoint(streamingCheckpointDir)
-      f(sc, ssc)
+      f(spark, ssc)
       ssc.start()
       ssc.awaitTermination()
     }

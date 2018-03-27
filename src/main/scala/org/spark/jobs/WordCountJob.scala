@@ -16,11 +16,11 @@ class WordCountJob(config: WordCountJobConfig, source: KafkaDStreamSource) exten
   override def streamingCheckpointDir: String = config.streamingCheckpointDir
 
   def start(): Unit = {
-    withSparkStreamingContext { (sc, ssc) =>
+    withSparkStreamingContext { (spark, ssc) =>
       val input = source.createSource(ssc, config.inputTopic)
 
       // Option 1: Array[Byte] -> String
-      val stringCodec = sc.broadcast(KafkaPayloadStringCodec())
+      val stringCodec = spark.sparkContext.broadcast(KafkaPayloadStringCodec())
       val lines = input.flatMap(stringCodec.value.decodeValue(_))
 
       // Option 2: Array[Byte] -> Specific Avro
@@ -62,7 +62,7 @@ object WordCountJob {
 }
 
 case class WordCountJobConfig(
-    inputTopic: String,
+    inputTopic: Array[String],
     outputTopic: String,
     stopWords: Set[String],
     windowDuration: FiniteDuration,
@@ -87,7 +87,7 @@ object WordCountJobConfig {
     val config = applicationConfig.getConfig("config")
 
     new WordCountJobConfig(
-      config.as[String]("input.topic"),
+      config.as[Array[String]]("input.topic"),
       config.as[String]("output.topic"),
       config.as[Set[String]]("stopWords"),
       config.as[FiniteDuration]("windowDuration"),

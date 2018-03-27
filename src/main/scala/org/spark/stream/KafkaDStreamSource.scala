@@ -9,9 +9,9 @@ import org.apache.spark.streaming.kafka.KafkaUtils
 
 class KafkaDStreamSource(config: Map[String, String]) {
 
-  def createSource(ssc: StreamingContext, topic: String): DStream[KafkaPayload] = {
+  def createSource(ssc: StreamingContext, topics: Array[String]): DStream[KafkaPayload] = {
     val kafkaParams = config
-    val kafkaTopics = Set(topic)
+    val kafkaTopics = topics.toSet
 
     KafkaUtils.
       createDirectStream[Array[Byte], Array[Byte], DefaultDecoder, DefaultDecoder](

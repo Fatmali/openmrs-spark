@@ -25,6 +25,17 @@ class KafkaPayloadStringCodec extends Serializable {
     }
   }
 
+  def decodeKey(payload: KafkaPayload): Option[String] = {
+    val decodedTry = Injection.invert[String, Array[Byte]](payload.key.get)
+    decodedTry match {
+      case Success(record) =>
+        Some(record)
+      case Failure(ex) =>
+        logger.warn("Could not decode payload", ex)
+        None
+    }
+  }
+
   def encodeValue(value: String): KafkaPayload = {
     val encoded = Injection[String, Array[Byte]](value)
     KafkaPayload(None, encoded)
