@@ -1,0 +1,211 @@
+
+
+
+version: '2'
+services:
+  spark-master:
+    image: jupyter/pyspark-notebook
+    command: /usr/local/bin/start-notebook.sh --NotebookApp.password='sha1:fddf4705a10e:4c8c6e866d62b6cccff353c2f5b43b2758031825'
+    network_mode: "host"
+    ports:
+      - 4040:4040
+      - 8060:8080
+      - 8888:8888
+      - 10000:10000
+    environment:
+      - PYSPARK_DRIVER_PYTHON=python3
+    volumes:
+      - /opt/pyspark/data:/home/jovyan/ampath
+      - /opt/pyspark/jars:/home/jovyan/jars/
+      - /opt/pyspark/conf:/usr/local/spark/conf
+      - ./kafka/python/kafka-python:/home/jovyan/ampath/kafka-python
+
+  cassandra:
+     image: cassandra:latest
+     command: /bin/bash -c "sleep 1 && /docker-entrypoint.sh cassandra -f -Dcassandra.config=file:///tmp/cassandra.yaml"
+     expose:
+       - 7000
+       - 7001
+       - 7199
+       - 9042
+       - 9160
+     volumes:
+       - ../cassandra/data:/var/lib/cassandra
+       - ../cassandra/cassandra.yaml:/tmp/cassandra.yaml
+     ports:
+       - 9042:9042
+       - 7191:7191
+       - 7000:7000
+       - 7001:7001
+       - 9160:9160
+
+
+  mysql:
+    image: 10.50.80.56:5005/ampath_mysql:5.6
+    hostname: mysql
+    ports:
+      - 3309:3306
+    environment:
+          - MYSQL_DATABASE=amrs
+          - MYSQL_USER=debezium
+          - MYSQL_PASSWORD=debezium
+          - MYSQL_ROOT_HOST=172.%    
+    volumes:
+        - /opt/openmrs-etl/mysql-conf:/etc/mysql/conf.d
+        - /opt/openmrs-etl/dbdump:/docker-entrypoint-initdb.d
+        - /data/mysqlcopy:/var/lib/mysql
+        - /opt/openmrs-etl/mysql-files:/var/lib/mysql-files
+  mysql2:
+    image: mysql:5.7
+    hostname: mysql2
+    ports:
+      - 3310:3306
+    environment:
+          - MYSQL_DATABASE=openmrs
+          - MYSQL_USER=mysqluser
+          - MYSQL_PASSWORD=mysqlpw
+          - MYSQL_ROOT_HOST=172.%
+    volumes:
+        - /opt/openmrs-etl/debezium-mysql/custom.cnf:/etc/mysql/conf.d/custom.cnf
+        - mysql-dummy:/var/lib/mysql
+        - ./dbdump:/docker-entrypoint-initdb.d
+        
+  amrs:
+    image: 10.50.80.56:5005/openmrs:2.1.2test
+    container_name: amrs
+    depends_on:
+     - mysql
+    links:
+     - mysql:mysql
+    ports:
+      - 8020:8080
+    environment:
+      DB_DATABASE: 'amrs'
+      DB_HOST: mysql
+      DB_USERNAME: 'debezium'
+      DB_PASSWORD: 'debezium'
+    volumes:
+      - /opt/openmrs-home:/root/.OpenMRS
+  openmrs:
+    restart: "always"
+    image: openmrs/openmrs-reference-application-distro:latest
+    container_name: openmrs
+    depends_on:
+      - mysql2
+    links:
+      - mysql2:mysql2
+    ports:
+      - "8010:8080"
+    environment:
+      DB_DATABASE: 'openmrs'
+      DB_HOST: mysql2
+      DB_USERNAME: 'mysqluser'
+      DB_PASSWORD: 'mysqlpw'
+
+  zookeeper:
+    image: debezium/zookeeper:0.8
+    hostname: zookeeper
+    ports:
+     - 2181:2181
+     - 2888:2888
+
+  kafka:
+    image: debezium/kafka:0.8
+    hostname: kafka
+    links:
+     - zookeeper
+    ports:
+     - 9092:9092
+     - 9581:9581
+    environment:
+       ZOOKEEPER_CONNECT: zookeeper:2181
+       CREATE_TOPICS: "input:1:3,output:1:3"
+       JMXPORT: 9581
+       JMXHOST: 0.0.0.0
+    volumes:
+     - ./kafka/config:/kafka/config
+     - ./kafka-connect:/kafka/connect
+
+  connect:
+    image: debezium/connect:0.8
+    hostname: connect
+    ports:
+     - 8085:8083
+     - 9585:9585
+    environment:
+     - BOOTSTRAP_SERVERS=kafka:9092
+     - GROUP_ID=1
+     - CONFIG_STORAGE_TOPIC=my_connect_configs
+     - OFFSET_STORAGE_TOPIC=offset_storage
+     - LOG4J_ROOT_LOGLEVEL="INFO"
+     - JMXPORT=9585
+     - JMXHOST=0.0.0.0
+     - CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR=1
+     - CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR=1
+     - CONNECT_STATUS_STORAGE_REPLICATION_FACTOR=1
+    volumes:
+     - ./kafka/cassandra-connector.jar:/kafka/connect/cassandra-connector.jar
+    links:
+      - kafka
+      - mysql
+      - cassandra
+
+  kafka-schema-registry:
+    image: confluentinc/cp-schema-registry:4.0.0
+    hostname: kafka-schema-registry
+    ports:
+      - 8089:8081
+      - 9584:9584
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
+      SCHEMA_REGISTRY_HOST_NAME: kafka-schema-registry
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+    depends_on:
+      - zookeeper
+      - kafka
+
+  schema-registry-ui:
+    image: landoop/schema-registry-ui:0.9.3
+    hostname: kafka-schema-registry-ui
+    ports:
+      - "8001:8000"
+    environment:
+      SCHEMAREGISTRY_URL: http://kafka-schema-registry:8081/
+      PROXY: "true"
+    depends_on:
+      - kafka-schema-registry
+
+  kafka-rest-proxy:
+    image: confluentinc/cp-kafka-rest:4.0.0
+    hostname: kafka-rest-proxy
+    ports:
+      - 8082:8082
+    environment:
+      KAFKA_REST_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_REST_LISTENERS: http://0.0.0.0:8082/
+      KAFKA_REST_SCHEMA_REGISTRY_URL: "http://kafka-schema-registry:8081/"
+      KAFKA_REST_HOST_NAME: kafka-rest-proxy
+      KAFKA_REST_BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      - zookeeper
+      - kafka
+      - kafka-schema-registry
+
+  kafka-topics-ui:
+    image: landoop/kafka-topics-ui:0.9.3
+    hostname: kafka-topics-ui
+    ports:
+      - "8000:8000"
+    environment:
+      KAFKA_REST_PROXY_URL: http://kafka-rest-proxy:8082
+      PROXY: "true"
+    depends_on:
+      - zookeeper
+      - kafka
+      - kafka-schema-registry
+      - kafka-rest-proxy
+volumes:
+    cassandra:
+       driver: local
+    mysql-dummy:
+

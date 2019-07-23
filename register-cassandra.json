@@ -1,0 +1,19 @@
+
+{
+  "name": "cassandra-etl",
+  "config": {
+   "tasks.max": "1",
+   "connector.class": "com.datamountaineer.streamreactor.connect.cassandra.source.CassandraSourceConnector",
+   "connect.cassandra.contact.points": "cassandra",
+   "connect.cassandra.port": 9042,
+   "connect.cassandra.username": "cassandra",
+   "connect.cassandra.password": "cassandra",
+   "connect.cassandra.consistency.level": "LOCAL_ONE",
+   "connect.cassandra.key.space": "etl",
+   "connect.cassandra.import.mode": "incremental",
+   "connect.cassandra.kcql": "INSERT INTO temp_flatobs select encounter_id,obs,date_created from temp_flatobs PK date_created INCREMENTALMODE=TIMESTAMP",
+   "connect.cassandra.initial.offset": "2018-05-02 07:20:00.0000000Z",
+   "connect.cassandra.import.poll.interval": 1000
+  }
+}
+

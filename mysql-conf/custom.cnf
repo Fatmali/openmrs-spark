@@ -1,0 +1,96 @@
+[mysqld]
+
+#..............
+# Replication of AMRS database:
+# An ID number to give the master (required):
+server_id=1
+ 
+# The location and name of the binlog log files (required):
+#log-bin="/data/mysql/amrs-bin"
+#log-bin="/var/log/mysql/mysql-bin.log"
+# This will limit replication to only the amrs database:
+#binlog-do-db=amrs
+#binlog-do-db=etl
+ 
+# This keeps only two weeks of binlog files:
+expire_logs_days=14
+ 
+# Set to '1' to write to binlog for every SQL statement instead of every transaction
+# (Safest option in case of server crash):
+sync_binlog=1
+#................#
+#secure-file-priv = ""
+#basedir=/opt/mysql/server-5.6
+#basedir=/usr
+#datadir=/data/mysql
+#socket=/var/run/mysqld/mysqld.sock
+#user=mysql
+#port=3306
+#trying to see if this will recover the database
+#innodb_force_recovery = 4
+
+# Disabling symbolic-links is recommended to prevent assorted security risks
+symbolic-links=0
+
+## Instead of skip-networking the default is now to listen only on
+# localhost which is more compatible and is not less secure.
+#bind-address		= 10.50.80.45
+bind-address		= 0.0.0.0
+# Fine Tuning
+
+
+[mysqld]
+interactive_timeout=1200
+wait_timeout=1200
+secure-file-priv = ""
+#key_buffer              = 16M
+key_buffer_size         = 2GB
+max_allowed_packet      = 512M
+thread_stack            = 512K
+thread_cache_size       = 128
+read_buffer_size        = 1M
+sort_buffer_size        = 1M
+
+innodb_read_io_threads    = 16
+innodb_write_io_threads   = 16
+innodb_buffer_pool_instances =2
+# Query Cache
+query_cache_type               = 1
+query_cache_limit              = 1M
+query_cache_size               = 32M
+
+# Logging
+log_queries_not_using_indexes  = 1
+slow_query_log                 = 1
+slow_query_log_file            = /var/log/mysql/mysql-slow-query.log
+log-error                      = /var/log/mysql/mysql-error.log
+innodb_log_file_size           = 768M
+innodb_locks_unsafe_for_binlog=1
+# Others
+tmp_table_size                 = 5G 
+max_heap_table_size            = 2G
+max_connections                = 1000
+thread_cache_size              = 50
+open_files_limit               = 65535
+table_definition_cache         = 4096
+table_open_cache               = 512
+back_log = 400
+# innodb plugin
+# ignore_builtin_innodb
+#default-storage-engine         = InnoDB
+#innodb_file_per_table          = 1
+#innodb_file_format             = barracuda
+#innodb_strict_mode             = 1
+#innodb_force_recovery = 1
+#plugin_dir                     = /usr/lib64/mysql/plugin
+#plugin-load                    = innodb=ha_innodb_plugin.so;innodb_trx=ha_innodb_plugin.so;innodb_locks=ha_innodb_plugin.so;innodb_lock_waits=ha_innodb_plugin.so;innodb_cmp=ha_innodb_plugin.so;innodb_cmp_reset=ha_innodb_plugin.so;innodb_cmpmem=ha_innodb_plugin.so;innodb_cmpmem_reset=ha_innodb_plugin.so
+
+# memory tweaks
+innodb_log_buffer_size                  = 320MB
+innodb_buffer_pool_size			= 10000MB
+#innodb_force_recovery=4
+
+log_bin           = mysql-bin
+expire_logs_days  = 1
+binlog_format     = row
+binlog_row_image  = full

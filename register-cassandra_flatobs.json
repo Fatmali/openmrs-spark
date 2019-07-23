@@ -1,0 +1,20 @@
+
+{
+  "name": "cassandra-etl-flatobs",
+  "config": {
+   "tasks.max": "1",
+   "connector.class": "com.datamountaineer.streamreactor.connect.cassandra.source.CassandraSourceConnector",
+   "connect.cassandra.contact.points": "cassandra",
+   "connect.cassandra.port": 9042,
+   "connect.cassandra.username": "cassandra",
+   "connect.cassandra.password": "cassandra",
+   "connect.cassandra.consistency.level": "LOCAL_ONE",
+   "connect.cassandra.key.space": "etl",
+   "connect.cassandra.import.mode": "incremental",
+   "connect.cassandra.kcql": "INSERT INTO flatobs_topic select * from flat_obs PK date_created INCREMENTALMODE=TIMESTAMP",
+   "connect.cassandra.initial.offset": "2018-05-10 12:28:00.0000000Z",
+   "connect.cassandra.import.poll.interval": 100
+  }
+}
+
+
